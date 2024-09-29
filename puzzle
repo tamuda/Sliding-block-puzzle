@@ -16,7 +16,7 @@ class Puzzle:
         Initializes the Puzzle instance.
 
         :param board: 2D list representing the puzzle board.
-        :param size: Size of the puzzle (e.g., 3 for a 3x3 puzzle).
+        :param size: Size of the puzzle (e.g 3 for a 3x3 puzzle).
         """
         self.board = board
         self.size = size
@@ -146,35 +146,6 @@ def generate_goal_state(size: int) -> List[List[int]]:
             count += 1
     return goal
 
-
-def main():
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description='Sliding Puzzle Solver.')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--astar', action='store_true', help='Use A* search algorithm.')
-    group.add_argument('--bfs', action='store_true', help='Use BFS search algorithm.')
-    args = parser.parse_args()
-
-    # Read input from stdin
-    input_lines = sys.stdin.read().strip().split('\n')
-    initial_puzzle = parse_input(input_lines)
-    goal_board = generate_goal_state(initial_puzzle.size)
-
-    if args.astar:
-        solution = astar_search(initial_puzzle, goal_board)
-    elif args.bfs:
-        # Placeholder for BFS implementation
-        solution = bfs_search(initial_puzzle, goal_board)
-    else:
-        print("Please specify either --astar or --bfs.")
-        sys.exit(1)
-
-    if solution is not None:
-        for move in solution:
-            print(move)
-    else:
-        print("No solution found.")
-
 def heuristic(puzzle: Puzzle, goal_positions: dict[int, Tuple[int, int]]) -> int:
     """
     Calculates the heuristic value (Manhattan Distance) for the puzzle.
@@ -234,8 +205,42 @@ def astar_search(initial_puzzle: Puzzle, goal_board: List[List[int]]) -> Optiona
                 counter += 1  # Increment the counter for each new entry
                 heapq.heappush(open_set, (f_score_neighbor, counter, neighbor))
 
+    return None  # No solution found
+
+def bfs_search(initial_puzzle: Puzzle, goal_board: List[List[int]]) -> Optional[List[str]]:
+    """
+    Performs the BFS search algorithm to find the shortest path to the goal state.
+
+    :param initial_puzzle: The initial Puzzle instance.
+    :param goal_board: 2D list representing the goal puzzle board.
+    :return: List of moves leading to the solution, or None if no solution exists.
+    """
+    from collections import deque
+
+    queue = deque()
+    queue.append(initial_puzzle)
+    came_from = {}
+    visited = set()
+    visited.add(initial_puzzle.get_state_key())
+
+    while queue:
+        current = queue.popleft()
+
+        if current.is_goal_state(goal_board):
+            return reconstruct_path(came_from, current)
+
+        current_key = current.get_state_key()
+        for move in current.get_possible_moves():
+            neighbor = current.move_blank(move)
+            neighbor_key = neighbor.get_state_key()
+
+            if neighbor_key not in visited:
+                visited.add(neighbor_key)
+                came_from[neighbor_key] = (current, move)
+                queue.append(neighbor)
 
     return None  # No solution found
+
 def reconstruct_path(came_from: dict[Tuple[Tuple[int, ...], ...], Tuple[Puzzle, str]], current: Puzzle) -> List[str]:
     """
     Reconstructs the path from the initial state to the goal state.
@@ -252,5 +257,34 @@ def reconstruct_path(came_from: dict[Tuple[Tuple[int, ...], ...], Tuple[Puzzle, 
         current_key = current.get_state_key()
     return total_path[::-1]  # Reverse the path to get the correct order
 
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description='Sliding Puzzle Solver.')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--astar', action='store_true', help='Use A* search algorithm.')
+    group.add_argument('--bfs', action='store_true', help='Use BFS search algorithm.')
+    args = parser.parse_args()
+
+    # Read input from stdin
+    input_lines = sys.stdin.read().strip().split('\n')
+    initial_puzzle = parse_input(input_lines)
+    goal_board = generate_goal_state(initial_puzzle.size)
+
+    if args.astar:
+        solution = astar_search(initial_puzzle, goal_board)
+    elif args.bfs:
+        # Placeholder for BFS implementation
+        solution = bfs_search(initial_puzzle, goal_board)
+    else:
+        print("Please specify either --astar or --bfs.")
+        sys.exit(1)
+
+    if solution is not None:
+        for move in solution:
+            print(move)
+    else:
+        print("No solution found.")
+
+        
 if __name__ == "__main__":
     main()
