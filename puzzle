@@ -3,6 +3,8 @@
 import sys
 from copy import deepcopy
 from typing import List, Tuple, Optional
+import heapq
+import argparse
 
 class Puzzle:
     """
@@ -146,23 +148,39 @@ def generate_goal_state(size: int) -> List[List[int]]:
 
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description='Sliding Puzzle Solver.')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--astar', action='store_true', help='Use A* search algorithm.')
+    group.add_argument('--bfs', action='store_true', help='Use BFS search algorithm.')
+    args = parser.parse_args()
+
     # Read input from stdin
     input_lines = sys.stdin.read().strip().split('\n')
-    puzzle = parse_input(input_lines)
-    goal_board = generate_goal_state(puzzle.size)
+    initial_puzzle = parse_input(input_lines)
+    goal_board = generate_goal_state(initial_puzzle.size)
 
-    # For demonstration purposes, print the initial and goal states
-    print("Initial State:")
-    print(puzzle)
-    print("\nGoal State:")
-    print('\n'.join(' '.join(map(str, row)) for row in goal_board))
+    if args.astar:
+        solution = astar_search(initial_puzzle, goal_board)
+    elif args.bfs:
+        # Placeholder for BFS implementation
+        solution = bfs_search(initial_puzzle, goal_board)
+    else:
+        print("Please specify either --astar or --bfs.")
+        sys.exit(1)
 
-def heuristic(puzzle: Puzzle, goal_positions: Dict[int, Tuple[int, int]]) -> int:
+    if solution is not None:
+        for move in solution:
+            print(move)
+    else:
+        print("No solution found.")
+
+def heuristic(puzzle: Puzzle, goal_positions: dict[int, Tuple[int, int]]) -> int:
     """
     Calculates the heuristic value (Manhattan Distance) for the puzzle.
 
     :param puzzle: The current Puzzle instance.
-    :param goal_positions: Dictionary mapping tile numbers to their goal positions.
+    :param goal_positions: dictionary mapping tile numbers to their goal positions.
     :return: Heuristic value as an integer.
     """
     distance = 0
@@ -189,37 +207,40 @@ def astar_search(initial_puzzle: Puzzle, goal_board: List[List[int]]) -> Optiona
             goal_positions[goal_board[i][j]] = (i, j)
 
     open_set = []
-    heapq.heappush(open_set, (0, initial_puzzle))
+    counter = 0  # Unique sequence count to prevent comparison issues
+    initial_key = initial_puzzle.get_state_key()
+    g_score = {initial_key: 0}
+    f_score = {initial_key: heuristic(initial_puzzle, goal_positions)}
+    heapq.heappush(open_set, (f_score[initial_key], counter, initial_puzzle))
     came_from = {}
-    g_score = {initial_puzzle.get_state_key(): 0}
-    f_score = {initial_puzzle.get_state_key(): heuristic(initial_puzzle, goal_positions)}
 
     while open_set:
-        _, current = heapq.heappop(open_set)
+        _, _, current = heapq.heappop(open_set)
 
         if current.is_goal_state(goal_board):
             return reconstruct_path(came_from, current)
 
+        current_key = current.get_state_key()
         for move in current.get_possible_moves():
             neighbor = current.move_blank(move)
-            tentative_g_score = g_score[current.get_state_key()] + 1
             neighbor_key = neighbor.get_state_key()
+            tentative_g_score = g_score[current_key] + 1
 
             if neighbor_key not in g_score or tentative_g_score < g_score[neighbor_key]:
                 came_from[neighbor_key] = (current, move)
                 g_score[neighbor_key] = tentative_g_score
                 f_score_neighbor = tentative_g_score + heuristic(neighbor, goal_positions)
                 f_score[neighbor_key] = f_score_neighbor
-                heapq.heappush(open_set, (f_score_neighbor, neighbor))
+                counter += 1  # Increment the counter for each new entry
+                heapq.heappush(open_set, (f_score_neighbor, counter, neighbor))
+
 
     return None  # No solution found
-
-
-def reconstruct_path(came_from: Dict[Tuple[Tuple[int, ...], ...], Tuple[Puzzle, str]], current: Puzzle) -> List[str]:
+def reconstruct_path(came_from: dict[Tuple[Tuple[int, ...], ...], Tuple[Puzzle, str]], current: Puzzle) -> List[str]:
     """
     Reconstructs the path from the initial state to the goal state.
 
-    :param came_from: Dictionary mapping state keys to their predecessors and moves.
+    :param came_from: dictionary mapping state keys to their predecessors and moves.
     :param current: The current Puzzle instance (goal state).
     :return: List of moves leading to the solution.
     """
