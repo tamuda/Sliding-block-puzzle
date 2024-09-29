@@ -25,8 +25,8 @@ Total Heuristic Value: Sum the Manhattan distances for all tiles.
 Example
 Consider a 3x3 puzzle:
 
-sql
-Copy code
+
+
 Initial State: Goal State:
 1 2 5 0 1 2
 3 4 8 3 4 5
@@ -71,15 +71,15 @@ Test Cases and Results
 Test Case 1
 Input:
 
-Copy code
+
 3
 1 2 5
 3 4 8
 6 7 0
 Solution Moves:
 
-css
-Copy code
+
+
 UP
 UP
 LEFT
@@ -93,15 +93,15 @@ Nodes Expanded: 6
 Test Case 2
 Input:
 
-Copy code
+
 3
 2 8 3
 1 6 4
 7 0 5
 Solution Moves:
 
-css
-Copy code
+
+
 LEFT
 UP
 RIGHT
@@ -135,17 +135,16 @@ How to Run the Solver
 Execute the Program:
 
 bash
-Copy code
+
 ./puzzle --astar < input_file.txt
 or
 
 bash
-Copy code
+
 ./puzzle --bfs < input_file.txt
 Input Format:
 
-php
-Copy code
+
 <size>
 <row 1>
 <row 2>
@@ -153,7 +152,7 @@ Copy code
 <row size>
 Example:
 
-Copy code
+
 3
 1 2 5
 3 4 8
@@ -164,8 +163,8 @@ A sequence of moves, each on a new line, representing the steps to solve the puz
 
 Example:
 
-css
-Copy code
+
+
 UP
 UP
 LEFT
